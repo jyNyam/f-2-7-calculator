@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F-2-7 점수제 비자 계산기</title>
+<style>
+body{font-family:'Noto Sans KR',sans-serif;background:#f4f4f4;margin:0;padding:20px;}
+.container{max-width:600px;margin:0 auto;background:white;padding:30px;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,0.1);}
+h2{text-align:center;color:#333;margin-bottom:25px;}
+.form-group{margin-bottom:15px;}
+label{font-weight:bold;display:block;margin-bottom:5px;color:#555;}
+select,input{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;font-size:16px;}
+.btn-primary{width:100%;background:#007bff;color:white;border:none;padding:12px;font-size:16px;border-radius:5px;cursor:pointer;margin-top:10px;}
+.btn-primary:hover{background:#0056b3;}
+.checkbox-container{display:flex;align-items:center;background:#f9f9f9;padding:15px;border-radius:5px;border:1px solid #eee;cursor:pointer;user-select:none;}
+.checkbox-container input[type="checkbox"]{width:20px;height:20px;margin-right:10px;cursor:pointer;}
+.checkbox-container:hover{background:#eef;}
+.hidden{display:none;}
+.result-box{margin-top:20px;padding:20px;background:#e8f5e9;border:1px solid #c8e6c9;border-radius:5px;text-align:center;}
+.score-total{font-size:28px;font-weight:bold;color:#2e7d32;}
+.score-detail{font-size:14px;color:#666;margin-top:5px;}
+.status-success{color:#2e7d32;}
+.status-error{color:#c62828;}
+.score-breakdown{background:#fff3cd;padding:10px;border-radius:5px;margin-top:10px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div id="intro-section">
+    <h2>F-2-7 점수 계산기</h2>
+    <p style="text-align:center;font-size:14px;color:#666;margin-bottom:20px;">비자 자격 확인 (무료)</p>
+
+    <div class="form-group">
+      <label for="userName">성함</label>
+      <input type="text" id="userName" placeholder="홍길동">
+    </div>
+
+    <div class="form-group">
+      <label for="userPhone">연락처</label>
+      <input type="tel" id="userPhone" placeholder="010-1234-5678">
+    </div>
+
+    <label class="checkbox-container" for="privacyCheck">
+      <input type="checkbox" id="privacyCheck">
+      <span>[필수] 개인정보 수집 동의</span>
+    </label>
+
+    <button class="btn-primary" onclick="startCalculator()">시작하기</button>
+  </div>
+
+  <div id="calculator-section" class="hidden">
+    <h2>F-2-7 상세 계산</h2>
+    
+    <div class="form-group"><label>나이</label><select id="age" onchange="calculateScore()"><option value="0">선택</option><option value="25">25-29세(25)</option><option value="23">18-24/30-34세(23)</option><option value="20">35-39세(20)</option><option value="12">40-44세(12)</option><option value="8">45-50세(8)</option></select></div>
+    
+    <div class="form-group"><label>학력</label><select id="education" onchange="calculateScore()"><option value="0">선택</option><option value="25">박사(25)</option><option value="20">석사(20)</option><option value="15">학사(15)</option><option value="10">전문학사(10)</option></select></div>
+    
+    <div class="form-group"><label>이공계 가산</label><select id="eduBonus" onchange="calculateScore()"><option value="0">없음</option><option value="5">학사이상(5)</option><option value="3">전문학사(3)</option></select></div>
+    
+    <div class="form-group"><label>한국어</label><select id="korean" onchange="calculateScore()"><option value="0">선택</option><option value="20">TOPIK5+/KIIP5(20)</option><option value="15">TOPIK4(15)</option><option value="10">TOPIK3(10)</option></select></div>
+    
+    <div class="form-group"><label>소득</label><select id="income" onchange="calculateScore()"><option value="0">미만(0)</option><option value="10">최저~3천(10)</option><option value="30">3천~4천(30)</option><option value="40">4천~5천(40)</option><option value="50">5천+(50)</option></select></div>
+    
+    <div class="form-group"><label>기타 가점</label><select id="extraPoints" onchange="calculateScore()"><option value="0">없음</option><option value="10">사회통합5(10)</option><option value="15">명문대(15)</option><option value="5">봉사100시간(5)</option><option value="25">유망산업(25)</option></select></div>
+    
+    <div class="form-group"><label>감점</label><select id="penaltyPoints" onchange="calculateScore()"><option value="0">없음</option><option value="10">경미위반(-10)</option><option value="20">중간위반(-20)</option><option value="30">벌금300만(-30)</option><option value="50">3회위반(-50)</option></select></div>
+
+    <div class="result-box">
+      <div>총점</div>
+      <div class="score-total" id="totalScore">0점</div>
+      <div class="score-detail" id="resultMessage">선택해주세요</div>
+      <div id="breakdown" class="score-breakdown"></div>
+    </div>
+
+    <button class="btn-primary btn-reset" onclick="resetToIntro()">처음으로</button>
+    <div style="font-size:12px;text-align:center;margin-top:10px;color:#999;">
+      Sheets: <span id="status">대기</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeReI2jTXgh3pzfI_PuUAGK8Wp5ZiMiL1vpnmevPkygk-TjmcXtXDDKsSu7oF1ndLn/exec'; // ← Apps Script URL 입력 (비워두면 테스트 가능)
+
+// 1. 개인정보 수집 + Sheets 저장
+async function startCalculator(){
+  const name = document.getElementById('userName').value.trim();
+  const phone = document.getElementById('userPhone').value.trim();
+  const checked = document.getElementById('privacyCheck').checked;
+  
+  if(!name || !phone || !checked){
+    alert('모두 입력/체크!');
+    return;
+  }
+  
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = '저장중...';
+  statusEl.className = '';
+  
+  // Sheets 저장 시도
+  if(SCRIPT_URL){
+    try{
+      const formData = new FormData();
+      formData.append('날짜', new Date().toLocaleString());
+      formData.append('성함', name);
+      formData.append('연락처', phone);
+      
+      const res = await fetch(SCRIPT_URL, {method:'POST', body:formData});
+      const result = await res.json();
+      
+      if(result.result === 'success'){
+        statusEl.textContent = '✅저장완료';
+        statusEl.className = 'status-success';
+      }else{
+        throw new Error(result.error);
+      }
+    }catch(e){
+      statusEl.textContent = '❌실패(정상)';
+      statusEl.className = 'status-error';
+      console.log('Sheets 에러:', e);
+    }
+  }else{
+    statusEl.textContent = '⏭️URL미설정';
+  }
+  
+  // 무조건 계산기로 이동
+  document.getElementById('intro-section').classList.add('hidden');
+  document.getElementById('calculator-section').classList.remove('hidden');
+}
+
+// 2. 점수 계산
+function calculateScore(){
+  const v = {
+    age: +document.getElementById('age').value||0,
+    edu: +document.getElementById('education').value||0,
+    eb: +document.getElementById('eduBonus').value||0,
+    kor: +document.getElementById('korean').value||0,
+    inc: +document.getElementById('income').value||0,
+    ext: +document.getElementById('extraPoints').value||0,
+    pen: -(+document.getElementById('penaltyPoints').value||0)
+  };
+  
+  const total = Math.max(0, v.age+v.edu+v.eb+v.kor+v.inc+v.ext+v.pen);
+  
+  document.getElementById('totalScore').textContent = total+'점';
+  const msg = document.getElementById('resultMessage');
+  
+  if(total>=80){
+    document.getElementById('totalScore').style.color = '#2e7d32';
+    msg.innerHTML = '<strong>합격권!</strong>';
+  }else{
+    document.getElementById('totalScore').style.color = '#c62828';
+    msg.innerHTML = '<strong>미달권</strong>';
+  }
+  
+  document.getElementById('breakdown').innerHTML = 
+    `나이:${v.age} 학:${v.edu}+${v.eb} 한:${v.kor} 소:${v.inc} 가:${v.ext} 감:${v.pen}`;
+}
+
+// 3. 처음으로 리셋
+function resetToIntro(){
+  document.getElementById('intro-section').classList.remove('hidden');
+  document.getElementById('calculator-section').classList.add('hidden');
+  document.querySelectorAll('select,input').forEach(e=>e.value='');
+  document.getElementById('status').textContent = '대기';
+}
+</script>
+
+</body>
+</html>
