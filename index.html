@@ -2,196 +2,255 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>F-2-7 비자 점수 & 데이터 저장 시스템</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F-2-7 비자 통합 진단 시스템</title>
     <style>
-        body{font-family:'Noto Sans KR',sans-serif;background:#f0f2f5;padding:20px;}
-        .container{max-width:750px;margin:0 auto;background:white;padding:30px;border-radius:15px;box-shadow:0 10px 25px rgba(0,0,0,0.1);}
-        h2{text-align:center;color:#1a73e8;border-bottom:2px solid #e8f0fe;padding-bottom:10px;}
-        .form-group{margin-bottom:15px;}
-        label{font-weight:bold;display:block;margin-bottom:8px;}
-        select, input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;}
-        .checkbox-group{background:#f9f9f9;padding:15px;border-radius:8px;border:1px solid #eee;}
-        .btn-primary{width:100%;background:#1a73e8;color:white;border:none;padding:15px;font-size:17px;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:20px;}
-        .result-box{margin-top:25px;padding:25px;background:#fff;border-radius:10px;text-align:center;border:2px solid #1a73e8;}
-        .score-val{font-size:32px;font-weight:bold;color:#1a73e8;}
-        .duration-val{font-size:32px;font-weight:bold;color:#e91e63;}
-        .hidden{display:none;}
-        #statusLabel{font-size:12px; color: #888; margin-top: 5px; text-align: right;}
+        :root { --primary: #1a73e8; --secondary: #e91e63; --bg: #f8f9fa; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .section-title { font-size: 18px; font-weight: bold; margin: 25px 0 10px; padding-left: 10px; border-left: 4px solid var(--primary); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        select, input[type="text"], input[type="tel"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        /* 체크박스 스타일 */
+        .grid-box { display: grid; grid-template-columns: 1fr; gap: 10px; background: #f1f3f4; padding: 15px; border-radius: 8px; }
+        .check-item { display: flex; align-items: flex-start; cursor: pointer; font-size: 14px; background: white; padding: 10px; border-radius: 4px; border: 1px solid #ddd; }
+        .check-item input { margin-right: 10px; margin-top: 3px; }
+        
+        /* 결과창 스타일 */
+        .result-panel { margin-top: 30px; padding: 25px; border: 2px solid var(--primary); border-radius: 10px; background: #fff; text-align: center; }
+        .main-results { display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px; }
+        .res-val { font-size: 36px; font-weight: bold; color: var(--primary); }
+        .res-period { font-size: 36px; font-weight: bold; color: var(--secondary); }
+        .detail-text { font-size: 13px; color: #666; background: #eee; padding: 10px; border-radius: 6px; text-align: left; }
+        
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-start { background: var(--primary); color: white; }
+        .btn-download { background: #34a853; color: white; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="intro-section">
-        <h2>F-2-7 진단 & 상담 예약</h2>
+        <h2>F-2-7 점수제 비자 진단</h2>
         <div class="form-group">
             <label>성함</label>
-            <input type="text" id="userName" placeholder="홍길동">
+            <input type="text" id="userName" placeholder="성함을 입력해 주세요">
         </div>
         <div class="form-group">
             <label>연락처</label>
-            <input type="tel" id="userPhone" placeholder="010-1234-5678">
+            <input type="tel" id="userPhone" placeholder="010-0000-0000">
         </div>
-        <p style="font-size:12px; color:#666;">* 입력하신 정보는 비자 자격 진단 및 상담 목적으로만 사용됩니다.</p>
-        <button class="btn-primary" onclick="startCalculator()">데이터 저장 후 진단 시작</button>
-        <div id="statusLabel">데이터 전송 대기 중</div>
+        <button class="btn btn-start" onclick="startCalc()">진단 시작하기</button>
     </div>
 
-    <div id="calculator-section" class="hidden">
-        <h2>상세 점수 입력</h2>
-        
+    <div id="main-section" class="hidden">
+        <h2>항목별 점수 산정</h2>
+
         <div class="form-group">
-            <label>1. 나이</label>
+            <label class="section-title">1. 나이 (최대 25점)</label>
             <select id="age" onchange="calculate()">
-                <option value="0">선택하세요</option>
-                <option value="25">25~29세 (25점)</option>
-                <option value="23">18~24세 / 30~34세 (23점)</option>
-                <option value="20">35~39세 (20점)</option>
-                <option value="12">40~44세 (12점)</option>
-                <option value="8">45~50세 (8점)</option>
+                <option value="0">선택</option>
+                <option value="23">18-24세 (23점)</option>
+                <option value="25">25-29세 (25점)</option>
+                <option value="23">30-34세 (23점)</option>
+                <option value="20">35-39세 (20점)</option>
+                <option value="12">40-44세 (12점)</option>
+                <option value="8">45-50세 (8점)</option>
                 <option value="3">51세 이상 (3점)</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>2. 학력 (이공계/복수학위 로직)</label>
+            <label class="section-title">2. 학력 (확인사항 1 반영)</label>
             <select id="edu" onchange="calculate()">
-                <option value="0">선택하세요</option>
-                <option value="25">박사: 이공계/2개 이상 (25점)</option>
-                <option value="20">박사: 이공계 외 (20점)</option>
-                <option value="20">석사: 이공계/2개 이상 (20점)</option>
-                <option value="17">석사: 이공계 외 (17점)</option>
-                <option value="17">학사: 이공계/2개 이상 (17점)</option>
-                <option value="15">학사: 이공계 외 (15점)</option>
+                <option value="0">선택</option>
+                <option value="25">박사: 이공계 또는 학위 2개 이상 (25점)</option>
+                <option value="20">박사: 이공계 외 일반 (20점)</option>
+                <option value="20">석사: 이공계 또는 학위 2개 이상 (20점)</option>
+                <option value="17">석사: 이공계 외 일반 (17점)</option>
+                <option value="17">학사: 이공계 또는 학위 2개 이상 (17점)</option>
+                <option value="15">학사: 이공계 외 일반 (15점)</option>
                 <option value="15">전문학사: 이공계 (15점)</option>
-                <option value="10">전문학사: 이공계 외 (10점)</option>
+                <option value="10">전문학사: 이공계 외 일반 (10점)</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>3. 한국어 능력</label>
+            <label class="section-title">3. 한국어 및 사회통합 (최대 20점)</label>
             <select id="lang" onchange="calculate()">
-                <option value="0">선택하세요</option>
-                <option value="20">5급 이상 (20점)</option>
-                <option value="15">4급 (15점)</option>
-                <option value="10">3급 (10점)</option>
-                <option value="5">2급 (5점)</option>
-                <option value="3">1급 (3점)</option>
+                <option value="0">선택</option>
+                <option value="20">고급 (TOPIK 5급↑ / KIIP 5단계) (20점)</option>
+                <option value="15">중급 (TOPIK 4급 / KIIP 4단계) (15점)</option>
+                <option value="10">중급 (TOPIK 3급 / KIIP 3단계) (10점)</option>
+                <option value="5">초급 (TOPIK 2급 / KIIP 2단계) (5점)</option>
+                <option value="3">초급 (TOPIK 1급 / KIIP 1단계) (3점)</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>4. 연간 소득 (체류기간 핵심지표)</label>
+            <label class="section-title">4. 연간 소득 (최대 60점)</label>
             <select id="income" onchange="calculate()">
-                <option value="0">선택하세요</option>
+                <option value="0">선택</option>
                 <option value="60">1억원 이상 (60점)</option>
-                <option value="50">6천만~7천만원 미만 (50점)</option>
-                <option value="45">5천만~6천만원 미만 (45점)</option>
-                <option value="40">4천만~5천만원 미만 (40점)</option>
-                <option value="30">3천만~4천만원 미만 (30점)</option>
-                <option value="10">3천만원 미만 (10점)</option>
+                <option value="58">9천만~1억 미만 (58점)</option>
+                <option value="56">8천만~9천만 미만 (56점)</option>
+                <option value="53">7천만~8천만 미만 (53점)</option>
+                <option value="50">6천만~7천만 미만 (50점)</option>
+                <option value="45">5천만~6천만 미만 (45점)</option>
+                <option value="40">4천만~5천만 미만 (40점)</option>
+                <option value="30">3천만~4천만 미만 (30점)</option>
+                <option value="10">최저임금~3천만 미만 (10점)</option>
             </select>
         </div>
 
-        <div class="form-group">
-            <label>5. 가점 항목 (복수 선택, 최대 40점)</label>
-            <div class="checkbox-group" id="bonusItems">
-                <label><input type="checkbox" value="20" onchange="calculate()"> 정부/참전국 추천 (20점)</label><br>
-                <label><input type="checkbox" value="10" onchange="calculate()"> 사회통합 5단계 이수 (10점)</label><br>
-                <label><input type="checkbox" value="20" onchange="calculate()"> 국내외 우수대 석사 (20점)</label><br>
-                <label><input type="checkbox" value="7" onchange="calculate()"> 국내 사회봉사 3년↑ (7점)</label>
-            </div>
+        <div class="section-title">5. 가점 항목 (중복 선택 가능 / 확인사항 3 반영)</div>
+        <div class="grid-box" id="bonusItems">
+            <label class="check-item"><input type="checkbox" value="20" onchange="calculate()"> 한국전 참전국 우수인재 (20점)</label>
+            <label class="check-item"><input type="checkbox" value="20" onchange="calculate()"> 중앙행정기관 추천 (20점)</label>
+            <label class="check-item"><input type="checkbox" value="10" onchange="calculate()"> 사회통합프로그램 5단계 이수 (10점)</label>
+            <label class="check-item"><input type="checkbox" value="30" onchange="calculate()"> 국내외 우수대학 박사학위 (30점)</label>
+            <label class="check-item"><input type="checkbox" value="10" onchange="calculate()"> 국내 일반대학 박사학위 (10점)</label>
+            <label class="check-item"><input type="checkbox" value="20" onchange="calculate()"> 국내외 우수대학 석사학위 (20점)</label>
+            <label class="check-item"><input type="checkbox" value="7" onchange="calculate()"> 국내 일반대학 석사학위 (7점)</label>
+            <label class="check-item"><input type="checkbox" value="15" onchange="calculate()"> 국내외 우수대학 학사학위 (15점)</label>
+            <label class="check-item"><input type="checkbox" value="5" onchange="calculate()"> 국내 일반대학 학사학위 (5점)</label>
+            <label class="check-item"><input type="checkbox" value="7" onchange="calculate()"> 국내 사회봉사 활동 3년 이상 (7점)</label>
+            <label class="check-item"><input type="checkbox" value="5" onchange="calculate()"> 국내 사회봉사 활동 2-3년 미만 (5점)</label>
+            <label class="check-item"><input type="checkbox" value="1" onchange="calculate()"> 국내 사회봉사 활동 1-2년 미만 (1점)</label>
         </div>
 
-        <div class="result-box">
-            <div style="display:flex; justify-content: space-around;">
-                <div>총점: <span class="score-val" id="totalScore">0점</span></div>
-                <div>부여기간: <span class="duration-val" id="stayDuration">-</span></div>
-            </div>
-            <div id="breakdown" style="font-size:12px; color:#888; margin-top:10px;"></div>
+        <div class="section-title">6. 감점 항목 (중복 선택 가능 / 확인사항 3 반영)</div>
+        <div class="grid-box" id="penaltyItems" style="background: #fdeaea;">
+            <label class="check-item"><input type="checkbox" value="5" onchange="calculate()"> 법 위반 1회 (5점)</label>
+            <label class="check-item"><input type="checkbox" value="10" onchange="calculate()"> 법 위반 2회 (10점)</label>
+            <label class="check-item"><input type="checkbox" value="30" onchange="calculate()"> 법 위반 3회 이상 (30점)</label>
+            <label class="check-item"><input type="checkbox" value="5" onchange="calculate()"> 신청인 허위사실 기재 (5점)</label>
         </div>
-        
-        <button class="btn-primary" onclick="downloadResult()">최종 결과 내려받기 (.txt)</button>
+
+        <div class="result-panel">
+            <div class="main-results">
+                <div>
+                    <div style="font-size: 14px; color: #666;">총점 (80점 합격)</div>
+                    <div class="res-val" id="totalScore">0점</div>
+                </div>
+                <div style="border-left: 1px solid #ddd; height: 60px;"></div>
+                <div>
+                    <div style="font-size: 14px; color: #666;">예상 체류기간</div>
+                    <div class="res-period" id="stayDuration">-</div>
+                </div>
+            </div>
+            <div class="detail-text" id="breakdown">항목을 선택하면 상세 점수가 여기에 표시됩니다.</div>
+        </div>
+
+        <button class="btn btn-download" onclick="downloadTXT()">진단 결과 파일로 저장하기</button>
     </div>
 </div>
 
 <script>
-    // ★★★ 본인의 Google Apps Script URL을 여기에 입력하세요 ★★★
-    const SCRIPT_URL = '여기에_스크립트_URL을_넣으세요'; 
+    // 1. 여기에 본인의 구글 앱스 스크립트 배포 URL을 입력하세요.
+    // 반드시 ' ' 기호 사이에 주소가 들어가야 합니다.
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeReI2jTXgh3pzfI_PuUAGK8Wp5ZiMiL1vpnmevPkygk-TjmcXtXDDKsSu7oF1ndLn/exec'; 
 
-    async function startCalculator() {
+    // 2. 개인정보 입력 후 데이터 전송 및 섹션 전환
+    async function startCalc() {
         const name = document.getElementById('userName').value.trim();
         const phone = document.getElementById('userPhone').value.trim();
-        const statusLabel = document.getElementById('statusLabel');
-
+        
         if(!name || !phone) { 
-            alert('성함과 연락처를 모두 입력해 주세요.'); 
+            alert("성함과 연락처를 입력해 주세요."); 
             return; 
         }
 
-        // 구글 시트로 데이터 전송
-        if(SCRIPT_URL && SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbyeReI2jTXgh3pzfI_PuUAGK8Wp5ZiMiL1vpnmevPkygk-TjmcXtXDDKsSu7oF1ndLn/exec') {
-            statusLabel.innerText = "데이터 저장 중...";
+        // 구글 시트로 데이터 전송 로직
+        if(SCRIPT_URL && SCRIPT_URL !== 'https://docs.google.com/spreadsheets/d/1CFUYGc2ON4N7mMO2qpn9JyomsaCAqowNtK-byYGOEwg/edit?gid=0#gid=0') {
             try {
                 const formData = new FormData();
                 formData.append('날짜', new Date().toLocaleString());
                 formData.append('성함', name);
                 formData.append('연락처', phone);
 
-                await fetch(SCRIPT_URL, { method: 'POST', body: formData });
-                statusLabel.innerText = "✅ 저장 완료";
+                // 서버로 전송 (비동기)
+                fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                console.log("데이터 전송 시도 중...");
             } catch (e) {
-                console.error('Error!', e.message);
-                statusLabel.innerText = "⚠️ 저장 실패(계산은 가능)";
+                console.error("전송 에러:", e);
             }
         }
 
-        // 다음 섹션으로 이동
+        // 화면 전환
         document.getElementById('intro-section').classList.add('hidden');
-        document.getElementById('calculator-section').classList.remove('hidden');
+        document.getElementById('main-section').classList.remove('hidden');
     }
 
+    // 2. 핵심 계산 로직
     function calculate() {
+        // 기본 항목
         const age = parseInt(document.getElementById('age').value) || 0;
         const edu = parseInt(document.getElementById('edu').value) || 0;
         const lang = parseInt(document.getElementById('lang').value) || 0;
         const incScore = parseInt(document.getElementById('income').value) || 0;
-        
-        let bonus = 0;
-        const checkboxes = document.querySelectorAll('#bonusItems input[type="checkbox"]');
-        checkboxes.forEach(cb => { if(cb.checked) bonus += parseInt(cb.value); });
-        if(bonus > 40) bonus = 40;
 
-        const total = age + edu + lang + incScore + bonus;
-        
-        // 체류기간 로직 적용
-        let duration = "-";
-        if (total >= 80) {
-            if (total >= 139 || incScore >= 50) duration = "5년";
-            else if (total >= 120 || incScore >= 45) duration = "3년";
-            else if (total >= 110 || incScore >= 30) duration = "2년";
-            else duration = "1년";
-        } else {
-            duration = "대상 아님";
+        // 가점 합산 (최대 40점 제한)
+        let bonusTotal = 0;
+        document.querySelectorAll('#bonusItems input:checked').forEach(el => {
+            bonusTotal += parseInt(el.value);
+        });
+        const finalBonus = Math.min(bonusTotal, 40);
+
+        // 감점 합산 (복수 선택 가능)
+        let penaltyTotal = 0;
+        document.querySelectorAll('#penaltyItems input:checked').forEach(el => {
+            penaltyTotal += parseInt(el.value);
+        });
+
+        // 최종 합계
+        const total = age + edu + lang + incScore + finalBonus - penaltyTotal;
+        const safeTotal = Math.max(0, total);
+
+        // 확인사항 2: 체류 기간 판정 (OR 로직)
+        let duration = "점수 미달";
+        if (safeTotal >= 80) {
+            // 가장 높은 기준부터 체크
+            if (safeTotal >= 139 || incScore >= 50) {
+                duration = "5년 연장";
+            } else if ((safeTotal >= 120 && safeTotal <= 129) || incScore >= 45) {
+                duration = "3년 연장";
+            } else if ((safeTotal >= 110 && safeTotal <= 119) || incScore >= 30) {
+                duration = "2년 연장";
+            } else {
+                duration = "1년 연장";
+            }
         }
 
-        document.getElementById('totalScore').innerText = total + "점";
+        // 화면 업데이트
+        document.getElementById('totalScore').innerText = safeTotal + "점";
         document.getElementById('stayDuration').innerText = duration;
-        document.getElementById('breakdown').innerText = `상세: 나이(${age}) 학력(${edu}) 한국어(${lang}) 소득(${incScore}) 가점(${bonus})`;
+        document.getElementById('breakdown').innerHTML = 
+            `<b>상세 내역:</b> 나이 ${age} + 학력 ${edu} + 언어 ${lang} + 소득 ${incScore} + 가점 ${finalBonus}(실제합:${bonusTotal}) - 감점 ${penaltyTotal}`;
+        
+        // 색상 변경
+        document.getElementById('totalScore').style.color = safeTotal >= 80 ? "#34a853" : "#ea4335";
     }
 
-    function downloadResult() {
+    // 3. 파일 저장 로직
+    function downloadTXT() {
         const name = document.getElementById('userName').value;
         const score = document.getElementById('totalScore').innerText;
         const duration = document.getElementById('stayDuration').innerText;
-        const content = `[F-2-7 비자 진단 결과]\n성함: ${name}\n총점: ${score}\n예상 체류기간: ${duration}`;
+        const detail = document.getElementById('breakdown').innerText;
         
-        const element = document.createElement('a');
-        const file = new Blob([content], {type: 'text/plain'});
-        element.href = URL.createObjectURL(file);
-        element.download = `F27_진단_${name}.txt`;
-        document.body.appendChild(element);
-        element.click();
+        const content = `[F-2-7 비자 진단 결과]\n\n이름: ${name}\n최종 점수: ${score}\n예상 체류기간: ${duration}\n${detail}\n\n* 본 결과는 입력하신 자료를 바탕으로 산출된 예상 수치입니다.`;
+        
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `F27_진단결과_${name}.txt`;
+        link.click();
     }
 </script>
 
